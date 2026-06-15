@@ -19,6 +19,8 @@ Usage (once implemented):
 """
 
 from tools import search_listings, suggest_outfit, create_fit_card
+from groq import Groq
+import json
 
 
 # ── session state ─────────────────────────────────────────────────────────────
@@ -43,6 +45,30 @@ def _new_session(query: str, wardrobe: dict) -> dict:
         "fit_card": None,            # string returned by create_fit_card
         "error": None,               # set if the interaction ended early
     }
+
+def _parse_query(query: str) -> dict:
+    client = Groq()
+    message = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        max_tokens=200,
+        messages=[
+            {
+                "role": "user",
+                "content": f"""Extract search parameters from this fashion query.
+Return only a JSON object with these fields:
+- description (str): the item being searched for, e.g. "vintage graphic tee"
+- size (str or null): size if mentioned, e.g. "M", "S", null if not mentioned
+- max_price (float or null): maximum price if mentioned, e.g. 30.0, null if not mentioned
+ 
+Query: "{query}"
+ 
+Return only the JSON object, no explanation.""",
+            }
+        ],
+    )
+    raw = message.choices[0].message.content.strip()
+    raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    return json.loads(raw)
 
 
 # ── planning loop ─────────────────────────────────────────────────────────────
@@ -93,8 +119,42 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     of planning.md — your implementation should match what you described there.
     """
     # TODO: implement the planning loop
+
+    # Step 1 — initialize session
     session = _new_session(query, wardrobe)
-    session["error"] = "Planning loop not yet implemented."
+ 
+    # Step 2 — parse the query with the LLM
+    session["parsed"] = _parse_query(query)
+    parsed = session["parsed"]
+ 
+    # Step 3 — search listings
+    session["search_results"] = search_listings(
+        description=parsed["description"],
+        size=parsed.get("size"),
+        max_price=parsed.get("max_price"),
+    )
+
+    if not session["search_results"]:
+        session["error"] = (
+            f"No listings found for '{parsed['description']}'. "
+            "Try different keywords, a higher price, or remove the size filter."
+        )
+        return session
+    
+    # Step 4 — select top result as anchor item
+    session["selected_item"] = session["search_results"][0]
+
+        # Step 5 — suggest outfit
+    session["outfit_suggestion"] = suggest_outfit(
+        new_item=session["selected_item"],
+        wardrobe=session["wardrobe"],
+    )
+ 
+    # Step 6 — create fit card
+    session["fit_card"] = create_fit_card(
+        outfit=session["outfit_suggestion"],
+        new_item=session["selected_item"],
+    )
     return session
 
 

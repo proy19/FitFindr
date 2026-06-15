@@ -35,6 +35,12 @@ def _get_groq_client():
 
 
 # ── Tool 1: search_listings ───────────────────────────────────────────────────
+def _score_listing(listing: dict, keywords: set[str]) -> int:
+    fields = " ".join([
+        listing["title"],
+        listing["description"],
+    ]).lower().split()
+    return len(keywords & set(fields))
 
 def search_listings(
     description: str,
@@ -69,11 +75,48 @@ def search_listings(
 
     Before writing code, fill in the Tool 1 section of planning.md.
     """
-    # Replace this with your implementation
-    return []
+
+    listings = load_listings()
+
+    # Step 2 — filter by max_price and size
+    if max_price is not None:
+        listings = [l for l in listings if l["price"] <= max_price]
+ 
+    if size is not None:
+        listings = [
+            l for l in listings
+            if size.lower() in l["size"].lower()
+        ]
+
+    # Step 3 — score each listing by keyword overlap with description
+    keywords = set(description.lower().split())
+    scored = [(_score_listing(l, keywords), l) for l in listings]
+ 
+    # Step 4 — drop score == 0
+    scored = [(s, l) for s, l in scored if s > 0]
+ 
+    # Step 5 — sort by score descending, return listing dicts
+    scored.sort(key=lambda x: x[0], reverse=True)
+
+    return [l for _, l in scored]
 
 
 # ── Tool 2: suggest_outfit ────────────────────────────────────────────────────
+def _call_llm(prompt: str) -> str:
+    client = Groq()
+    message = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        max_tokens=1000,
+        temperature=0.9,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return message.choices[0].message.content
+
+def _format_wardrobe(wardrobe: dict) -> str:
+    lines = []
+    for item in wardrobe["items"]:
+        lines.append(f"- {item['name']} ({item['category']}, {item['colors']})")
+    return "\n".join(lines)
 
 def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
     """
@@ -100,8 +143,36 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
 
     Before writing code, fill in the Tool 2 section of planning.md.
     """
-    # Replace this with your implementation
-    return ""
+    items = wardrobe.get("items", [])
+
+    if not items:
+    # Step 2 — general styling advice
+     prompt = f"""You are a secondhand fashion stylist.
+        A user is considering buying this item:
+        - Name: {new_item['title']}
+        - Category: {new_item['category']}
+        - Colors: {', '.join(new_item['colors'])}
+        - Style tags: {', '.join(new_item['style_tags'])}
+        They haven't told you what else they own. Suggest what kinds of pieces pair well \
+        with this item, what vibe it suits, and how they might wear it. Keep it concise \
+        and practical."""
+
+    else:
+        # Step 3 — specific outfit combinations from wardrobe
+     prompt = f"""You are a secondhand fashion stylist.
+        A user is considering buying this item:
+        - Name: {new_item['title']}
+        - Category: {new_item['category']}
+        - Colors: {', '.join(new_item['colors'])}
+        - Style tags: {', '.join(new_item['style_tags'])}
+        Their wardrobe contains:
+        {_format_wardrobe(wardrobe)}
+        Suggest 1–2 complete outfit combinations using the new item and named pieces \
+        from their wardrobe. Be specific — reference the actual piece names. Keep it \
+        concise and practical."""
+
+    # Step 4 — return LLM response
+    return _call_llm(prompt)
 
 
 # ── Tool 3: create_fit_card ───────────────────────────────────────────────────
@@ -133,5 +204,22 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
 
     Before writing code, fill in the Tool 3 section of planning.md.
     """
-    # Replace this with your implementation
-    return ""
+    if not outfit or not outfit.strip():
+        return "Error: outfit description is missing — cannot generate a fit card."
+        
+    else:
+     prompt = f"""You are writing captions for a secondhand fashion app.
+        The thrifted item:
+        - Name: {new_item['title']}
+        - Price: ${new_item['price']}
+        - Platform: {new_item['platform']}
+        The outfit:
+        {outfit}
+        Write a 2–4 sentence Instagram caption for this outfit. Rules:
+        - Casual and authentic, like a real person's OOTD post — not a product description
+        - Mention the item name, price, and platform naturally, once each
+        - Capture the specific vibe of the outfit
+        - No hashtags unless they feel completely natural
+        - All lowercase is fine"""
+ 
+    return _call_llm(prompt)
