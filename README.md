@@ -15,7 +15,8 @@ GROQ_API_KEY=your_key_here
 
 # Video Demo
 Test Query
-<img width="800" height="520" alt="ezgif com-video-to-gif-converter (1)" src="https://github.com/user-attachments/assets/ae3f794f-b7fa-471c-8e06-feaadc5b436b" />
+<img width="800" height="520" alt="PriyangkaRoy_Project2_VideoDemo-ezgif com-video-to-gif-converter" src="https://github.com/user-attachments/assets/f194c8e9-726b-4e0a-a6a9-b6939f0e796f" />
+
 
 
 # Tool inventory
