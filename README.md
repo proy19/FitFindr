@@ -36,7 +36,7 @@ Load an example wardrobe with:
 from utils.data_loader import get_example_wardrobe
 wardrobe = get_example_wardrobe()
 ```
-# Tool inventory: name, inputs (parameter names and types, e.g. description (str)), outputs, and purpose of each tool (the documented inputs and return values must match your actual function signatures in the code)
+# Tool inventory
 
 ## Tool 1: search_listings
 
