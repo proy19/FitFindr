@@ -97,20 +97,8 @@ The planning tool  determines the next step:
 - Always starts with search_listings
 - Always calls suggest_outfit next — only if search_listings returned results
 - Always calls create_fit_card last — suggest_outfit always returns something so this step is never skipped
-
-# State management approach: what is stored, when, and how it's passed between tools
-What is stored
-The session dict is the single source of truth for one full interaction. It holds the raw query, the parsed parameters extracted from it, the full ranked list of listings, the top listing selected as the anchor item, the user's wardrobe, the outfit suggestion string, the fit card caption, and any error that caused early termination.
-
-When it is written
-Each field is written exactly once, at the step that produces it. parsed is written after the LLM extracts description, size, and max price from the query. search_results is written after search_listings runs. selected_item is written immediately after by taking search_results[0]. outfit_suggestion is written after suggest_outfit returns. fit_card is written after create_fit_card returns. error is written only if the loop exits early — currently only when search_results is empty.
-
-How it is passed between tools
-No tool reads from the session dict directly. Each tool receives only the values it needs as explicit arguments. run_agent pulls the right fields out of session and passes them. 
-
-The session accumulates state; the tools stay stateless. Neither suggest_outfit nor create_fit_card knows the session exists — they just take inputs and return strings.
-
-# Error handling strategy for each tool, with at least one concrete example from your testing
+- 
+# Error handling strategy for each tool
 
 ## Tool 1: search_listings 
 Returns an empty list when no listings match — never raises. run_agent checks for this immediately after the call and sets session["error"] with a message telling the user what to try differently, then returns early. suggest_outfit is never called with empty input.
