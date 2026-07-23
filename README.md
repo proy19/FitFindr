@@ -1,19 +1,4 @@
-# FitFindr — Starter Kit
-
-This starter kit contains everything you need to begin Project 2.
-
-## What's Included
-
-```
-ai201-project2-fitfindr-starter/
-├── data/
-│   ├── listings.json          # 40 mock secondhand listings
-│   └── wardrobe_schema.json   # Wardrobe format + example wardrobe
-├── utils/
-│   └── data_loader.py         # Helper functions for loading the data
-├── planning.md                # Your planning template — fill this out first
-└── requirements.txt           # Python dependencies
-```
+# FitFindr 
 
 ## Setup
 
@@ -51,15 +36,6 @@ Load an example wardrobe with:
 from utils.data_loader import get_example_wardrobe
 wardrobe = get_example_wardrobe()
 ```
-
-## Where to Start
-
-1. **Read `planning.md` and fill it out before writing any code.**
-2. Verify the data loads correctly by running `python utils/data_loader.py`.
-3. Build and test each tool individually before connecting them through your planning loop.
-
-Your implementation files go in this same directory. There's no required file structure for your agent code — organize it however makes sense for your design.
-
 # Tool inventory: name, inputs (parameter names and types, e.g. description (str)), outputs, and purpose of each tool (the documented inputs and return values must match your actual function signatures in the code)
 
 ## Tool 1: search_listings
@@ -151,13 +127,3 @@ Guards against an empty or whitespace-only outfit string before hitting the API.
 
 Concrete example: if suggest_outfit somehow returned "   ", create_fit_card returns "Error: outfit description is missing — cannot generate a fit card." and the session completes without crashing.
 
-# Spec reflection: one way the spec helped you, one way implementation diverged from it and why
-The spec really helped me by taking me through the step by step process of the implementation of the app. One way the implementation diverged from it, is that I used separate functions to create the LLM client and to parse my data. I also added additional tests than what was on the specs. 
-
-# AI usage section: at least 2 specific instances describing what you directed the AI to do and what you revised or overrode
-
-Instance 1 — _format_wardrobe KeyError on 'color'
-The initial implementation of _format_wardrobe accessed item['color'] directly. During testing this raised a KeyError because the wardrobe item schema uses a different field name for color. The line was accessing a field that didn't exist in the actual wardrobe dict. The fix was to check the actual wardrobe schema and update the field name to match what the data loader returns.
-
-Instance 2 — _parse_query JSONDecodeError
-The LLM was prompted to return only a JSON object with no explanation, but in practice returned the response wrapped in markdown fences — ```json ... ```. This caused json.loads to raise a JSONDecodeError. Rather than changing the prompt alone (which couldn't guarantee the LLM would always comply), the fix was to add defensive stripping of ```json, ```, and trailing ``` before parsing, making the function robust regardless of how the LLM formatted its response.
