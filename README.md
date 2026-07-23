@@ -1,6 +1,6 @@
 # FitFindr 
 
-• A thrift shopping agent built with a multi-step agentic pipeline, using a planning loop and state management system to search listings, match finds to a user's wardrobe, and generate shareable outfit descriptions.
+A thrift shopping agent built with a multi-step agentic pipeline, using a planning loop and state management system to search listings, match finds to a user's wardrobe, and generate shareable outfit descriptions.
 
 ## Setup
 
