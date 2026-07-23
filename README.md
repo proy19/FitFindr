@@ -97,7 +97,7 @@ The planning tool  determines the next step:
 - Always starts with search_listings
 - Always calls suggest_outfit next — only if search_listings returned results
 - Always calls create_fit_card last — suggest_outfit always returns something so this step is never skipped
-- 
+
 # Error handling strategy for each tool
 
 ## Tool 1: search_listings 
